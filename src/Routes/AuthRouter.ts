@@ -1,8 +1,14 @@
 import express from "express";
-import { loginWithGoogle } from "../Controllers/AuthController";
-
+import {
+  loginWithGoogle,
+  loginWithGoogleCallback,
+  userProfile,
+} from "../Controllers/AuthController";
+import isAuthenticated from "src/Middlewares/AuthMiddleware";
 const router = express.Router();
 
-router.post("/login/google", loginWithGoogle);
+router.get("/login/google", loginWithGoogle);
+router.get("/login/google/callback", loginWithGoogleCallback);
 
+router.get("/profile", isAuthenticated, userProfile);
 export default router;

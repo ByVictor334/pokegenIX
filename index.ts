@@ -1,7 +1,10 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import connectDB from "./src/config/database";
-import userRoutes from "./src/Routes/User";
+import authRoutes from "./src/Routes/AuthRouter";
+import openIaRoutes from "./src/Routes/OpenIaRouter";
+import session from "express-session";
+import MongoStore from "connect-mongo";
 
 // Load environment variables
 dotenv.config();
@@ -11,6 +14,23 @@ const port = process.env.PORT || 3001;
 
 // Connect to MongoDB
 connectDB();
+
+// mongo-conect
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET as string,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI as string,
+      collectionName: "sessions",
+    }),
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 2, // 2 horas
+      secure: false, // Cambia a true si usas HTTPS en producción
+    },
+  })
+);
 
 // Middleware for parsing JSON bodies
 app.use(express.json());
@@ -28,7 +48,8 @@ app.get("/hello", async (_req: Request, res: Response) => {
   }
 });
 
-app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/openia", openIaRoutes);
 
 // Error handling middleware
 app.use(
