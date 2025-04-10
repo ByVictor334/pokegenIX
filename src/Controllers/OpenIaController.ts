@@ -143,14 +143,6 @@ export const createPokemonBasedOnImageDescription = async (
       return;
     }
 
-    // Upload image to Firebase Storage
-    const timestamp = Date.now();
-    const fileName = `pokemon_${timestamp}_${req.file.originalname}`;
-    const storageRef = ref(storage, `pokemon/${fileName}`);
-
-    await uploadBytes(storageRef, req.file.buffer);
-    const imageUrl = await getDownloadURL(storageRef);
-
     // Create temp directory if it doesn't exist
     const tempDir = path.join(process.cwd(), "temp");
     if (!fs.existsSync(tempDir)) {
@@ -164,28 +156,9 @@ export const createPokemonBasedOnImageDescription = async (
       .png() // Convert to PNG
       .toBuffer();
 
-    const tempFilePath = path.join(tempDir, `processed_${fileName}.png`);
-    fs.writeFileSync(tempFilePath, processedImageBuffer);
-
-    // Create a mask image with transparent background
-    const maskBuffer = await sharp({
-      create: {
-        width: 1024,
-        height: 1024,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      },
-    })
-      .png()
-      .toBuffer();
-
-    const maskFilePath = path.join(tempDir, `mask_${fileName}.png`);
-    fs.writeFileSync(maskFilePath, maskBuffer);
-
     const description = await getPrompt(
       `data:image/png;base64,${processedImageBuffer.toString("base64")}`
     );
-    console.log(description);
 
     if (!description) {
       res.status(400).json({ error: "No description provided" });
@@ -196,7 +169,6 @@ export const createPokemonBasedOnImageDescription = async (
 
     res.json({
       success: true,
-      originalImage: imageUrl,
       description: description,
       pokemon: pokemonImage,
     });
