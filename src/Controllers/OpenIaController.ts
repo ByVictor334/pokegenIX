@@ -56,7 +56,7 @@ async function getPokemonImage(_description: string) {
   // });
   // return pokemon.data[0].url;
 
-  return "https://firebasestorage.googleapis.com/v0/b/pokegenix-a40c3.firebasestorage.app/o/pokedex%2Fpokedex_1744270081596.png?alt=media&token=2bae1696-a12a-42c5-bb43-bdbdd0d4309b";
+  return "https://firebasestorage.googleapis.com/v0/b/pokegenix-a40c3.firebasestorage.app/o/pokedex%2FChatGPT%20Image%20Apr%2010%2C%202025%2C%2012_17_45%20AM.png?alt=media&token=cb36e308-ad60-4415-a725-51182c4a8669";
 }
 
 async function getPokedexBasedOnImage(image: string) {
