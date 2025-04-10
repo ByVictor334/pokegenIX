@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 
 const userSchema = new mongoose.Schema({
+  id: {
+    type: String,
+    required: true,
+    unique: true,
+    default: () => uuidv4(),
+  },
   name: {
     type: String,
     required: true,
@@ -14,13 +21,20 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  provider: {
+    type: String,
+    default: "google",
+  },
+  googleId: {
+    type: String,
+    default: "",
+  },
   role: {
     type: String,
     default: "user",
   },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
-  isAdmin: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   isVerified: { type: Boolean, default: false },
   isDeleted: { type: Boolean, default: false },
@@ -29,6 +43,4 @@ const userSchema = new mongoose.Schema({
   isSuspended: { type: Boolean, default: false },
 });
 
-const UserModel = mongoose.model("User", userSchema);
-
-export default UserModel;
+export const UserModel = mongoose.model("User", userSchema);

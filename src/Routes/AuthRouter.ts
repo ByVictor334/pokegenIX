@@ -4,7 +4,7 @@ import {
   loginWithGoogleCallback,
   userProfile,
 } from "../Controllers/AuthController";
-import isAuthenticated from "src/Middlewares/AuthMiddleware";
+import isAuthenticated from "../Middlewares/AuthMiddleware";
 const router = express.Router();
 
 router.get("/login/google", loginWithGoogle);

@@ -1,15 +1,24 @@
 import express from "express";
-import { createPokemon } from "../Controllers/OpenIaController";
-import isAuthenticated from "../Middlewares/AuthMiddleware";
+import {
+  createPokemonBasedOnImage,
+  createPokemonBasedOnImageDescription,
+} from "../Controllers/OpenIaController";
+// import isAuthenticated from "../Middlewares/AuthMiddleware";
 import upload from "../Middlewares/UploadMiddleware";
 
 const router = express.Router();
 
 router.post(
   "/create-pokemon",
-  isAuthenticated,
+  // isAuthenticated,
   upload.single("image"),
-  createPokemon
+  createPokemonBasedOnImage
+);
+
+router.post(
+  "/create-pokemon-description",
+  upload.single("image"),
+  createPokemonBasedOnImageDescription
 );
 
 export default router;
