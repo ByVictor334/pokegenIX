@@ -5,6 +5,7 @@ import { storage } from "../config/firebase";
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
+import fetch from "node-fetch";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -43,17 +44,69 @@ The output must be under 1000 characters total. Do not include any background, l
   return description;
 }
 
-async function getPokemonImage(description: string) {
+async function getPokemonImage(_description: string) {
+  // const prompt = `
+  // Create a single, original collectible creature inspired by the following description: ${description}. The creature must be cute, stylized, and have a simple yet iconic design. It should feature bright, appealing colors, large expressive eyes, and a friendly but battle-ready appearance. Its form should reflect the shape, texture, and color of the description in a creative and playful way. Render the creature in full-body, with clean lines and a digital art style reminiscent of Nintendo or creature-collecting games. The final image should show ONLY ONE creature, centered on a pure white background, and with no text.
+  // `;
+  // const pokemon = await openai.images.generate({
+  //   model: "dall-e-3",
+  //   prompt: prompt,
+  //   n: 1,
+  //   size: "1024x1024",
+  // });
+  // return pokemon.data[0].url;
+
+  return "https://firebasestorage.googleapis.com/v0/b/pokegenix-a40c3.firebasestorage.app/o/pokedex%2Fpokedex_1744270081596.png?alt=media&token=2bae1696-a12a-42c5-bb43-bdbdd0d4309b";
+}
+
+async function getPokedexBasedOnImage(image: string) {
   const prompt = `
-  Create a single, original collectible creature inspired by the following description: ${description}. The creature must be cute, stylized, and have a simple yet iconic design. It should feature bright, appealing colors, large expressive eyes, and a friendly but battle-ready appearance. Its form should reflect the shape, texture, and color of the description in a creative and playful way. Render the creature in full-body, with clean lines and a digital art style reminiscent of Nintendo or creature-collecting games. The final image should show ONLY ONE creature, centered on a pure white background, and with no text.
-  `;
-  const pokemon = await openai.images.generate({
-    model: "dall-e-3",
-    prompt: prompt,
-    n: 1,
-    size: "1024x1024",
+  Based on the provided image, create a detailed JSON file describing an original collectible creature. Do not include any text or labels in the image. The JSON should include:
+{
+  "name": "UniqueCreatureName",
+  "type": "Elemental type (e.g., Grass, Fire, Water, etc.)",
+  "color": "Color of the type (e.g., Red, Blue, Yellow, etc.)",
+  "description": "A short biography of the creature, including its personality, behavior, and environment.",
+  "abilities": ["List of special abilities"],
+  "base_stats": {
+    "health": Integer (0-255),
+    "attack": Integer (0-255),
+    "defense": Integer (0-255),
+    "speed": Integer (0-255),
+    "intelligence": Integer (0-255),
+    "special": Integer (0-255)
+  },
+  "rarity": "Common | Uncommon | Rare | Epic | Legendary",
+  "habitat": "Natural habitat or biome",
+  "behavior": "Typical behavior or social patterns",
+  "preferred_items": ["List of items or foods it likes"],
+  "height": "Height in meters",
+  "weight": "Weight in kilograms",
+}
+Only output the JSON structure. Don't include explanations or comments. Format the response cleanly and correctly. 
+Do not wrap in markdown or code blocks. Do not include any explanation or labels. Only output raw JSON`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          {
+            type: "image_url",
+            image_url: {
+              url: image,
+            },
+          },
+        ],
+      },
+    ],
+    max_tokens: 500,
   });
-  return pokemon.data[0].url;
+
+  const description = response.choices[0].message.content;
+  return description;
 }
 
 export const createPokemonBasedOnImage = async (
@@ -81,11 +134,22 @@ export const createPokemonBasedOnImage = async (
     }
 
     // Process image with Sharp
-    const processedImageBuffer = await sharp(req.file.buffer)
-      .resize(1024, 1024, { fit: "contain" }) // Resize to required dimensions
-      .ensureAlpha() // Ensure image has alpha channel (RGBA)
-      .png() // Convert to PNG
-      .toBuffer();
+    let processedImageBuffer;
+    try {
+      processedImageBuffer = await sharp(req.file.buffer)
+        .resize(1024, 1024, { fit: "contain" }) // Resize to required dimensions
+        .ensureAlpha() // Ensure image has alpha channel (RGBA)
+        .png() // Convert to PNG
+        .toBuffer();
+    } catch (sharpError) {
+      console.error("Sharp processing error:", sharpError);
+      res.status(400).json({
+        success: false,
+        error:
+          "Invalid image format. Please upload a valid image file (PNG, JPEG, GIF, or WebP).",
+      });
+      return;
+    }
 
     const tempFilePath = path.join(tempDir, `processed_${fileName}.png`);
     fs.writeFileSync(tempFilePath, processedImageBuffer);
@@ -128,7 +192,7 @@ export const createPokemonBasedOnImage = async (
     console.error("Error processing request:", error);
     res.status(500).json({
       success: false,
-      error: "Error processing request",
+      error: `Error processing request: ${error.message}`,
     });
   }
 };
@@ -150,11 +214,22 @@ export const createPokemonBasedOnImageDescription = async (
     }
 
     // Process image with Sharp
-    const processedImageBuffer = await sharp(req.file.buffer)
-      .resize(1024, 1024, { fit: "contain" }) // Resize to required dimensions
-      .ensureAlpha() // Ensure image has alpha channel (RGBA)
-      .png() // Convert to PNG
-      .toBuffer();
+    let processedImageBuffer;
+    try {
+      processedImageBuffer = await sharp(req.file.buffer)
+        .resize(1024, 1024, { fit: "contain" }) // Resize to required dimensions
+        .ensureAlpha() // Ensure image has alpha channel (RGBA)
+        .png() // Convert to PNG
+        .toBuffer();
+    } catch (sharpError) {
+      console.error("Sharp processing error:", sharpError);
+      res.status(400).json({
+        success: false,
+        error:
+          "Invalid image format. Please upload a valid image file (PNG, JPEG, GIF, or WebP).",
+      });
+      return;
+    }
 
     const description = await getPrompt(
       `data:image/png;base64,${processedImageBuffer.toString("base64")}`
@@ -171,6 +246,70 @@ export const createPokemonBasedOnImageDescription = async (
       success: true,
       description: description,
       pokemon: pokemonImage,
+    });
+  } catch (error) {
+    console.error("Error processing request:", error);
+    res.status(500).json({
+      success: false,
+      error: `Error processing request: ${error.message}`,
+    });
+  }
+};
+
+export const createPokedexBasedOnImage = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.body.imageLink) {
+      res.status(400).json({ error: "No image URL provided" });
+      return;
+    }
+
+    const imageLink = req.body.imageLink;
+
+    // Fetch the image from URL
+    const imageResponse = await fetch(imageLink);
+    if (!imageResponse.ok) {
+      throw new Error("Failed to fetch image from URL");
+    }
+    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+
+    // Upload image to Firebase Storage
+    const timestamp = Date.now();
+    const fileName = `pokedex_${timestamp}.png`;
+    const storageRef = ref(storage, `pokedex/${fileName}`);
+
+    // Process image with Sharp before uploading
+    let processedBuffer;
+    try {
+      processedBuffer = await sharp(imageBuffer)
+        .png() // Ensure it's in PNG format
+        .toBuffer();
+    } catch (sharpError) {
+      console.error("Sharp processing error:", sharpError);
+      res.status(400).json({
+        success: false,
+        error:
+          "Invalid image format. Please upload a valid image file (PNG, JPEG, GIF, or WebP).",
+      });
+      return;
+    }
+
+    // Upload to Firebase Storage with metadata
+    await uploadBytes(storageRef, processedBuffer, {
+      contentType: "image/png",
+      customMetadata: {
+        originalName: fileName,
+      },
+    });
+
+    const imageUrl = await getDownloadURL(storageRef);
+    const pokedex = await getPokedexBasedOnImage(imageUrl);
+
+    res.json({
+      success: true,
+      pokedex: pokedex,
     });
   } catch (error) {
     console.error("Error processing request:", error);

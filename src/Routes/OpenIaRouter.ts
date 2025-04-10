@@ -2,6 +2,7 @@ import express from "express";
 import {
   createPokemonBasedOnImage,
   createPokemonBasedOnImageDescription,
+  createPokedexBasedOnImage,
 } from "../Controllers/OpenIaController";
 // import isAuthenticated from "../Middlewares/AuthMiddleware";
 import upload from "../Middlewares/UploadMiddleware";
@@ -20,5 +21,7 @@ router.post(
   upload.single("image"),
   createPokemonBasedOnImageDescription
 );
+
+router.post("/create-pokedex", createPokedexBasedOnImage);
 
 export default router;
