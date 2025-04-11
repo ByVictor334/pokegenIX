@@ -73,6 +73,11 @@ const createUser = async (profile: GoogleProfile) => {
 };
 
 async function verifyGoogleIdToken(idToken: string) {
+  console.log(
+    "%csrcControllersAuthController.ts:82 idToken",
+    "color: white; background-color: #007acc;",
+    idToken
+  );
   const ticket = await client.verifyIdToken({
     idToken,
     audience: CLIENT_ID_MOBILE, // verifica que el token fue emitido para tu app
