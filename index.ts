@@ -5,6 +5,7 @@ import authRoutes from "./src/Routes/AuthRouter";
 import openIaRoutes from "./src/Routes/OpenIaRouter";
 import session from "express-session";
 import MongoStore from "connect-mongo";
+import cors from "cors";
 
 // Load environment variables
 dotenv.config();
@@ -15,19 +16,33 @@ const port = process.env.PORT || 3001;
 // Connect to MongoDB
 connectDB();
 
-// mongo-conect
+// Configure CORS
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// Session configuration
 app.use(
   session({
-    secret: process.env.SESSION_SECRET as string,
+    secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-      mongoUrl: process.env.MONGODB_URI as string,
+      mongoUrl: process.env.MONGODB_URI || "mongodb://localhost:27017/your-db",
       collectionName: "sessions",
+      ttl: 24 * 60 * 60, // 1 day
     }),
     cookie: {
-      maxAge: 1000 * 60 * 60 * 2, // 2 horas
-      secure: false, // Cambia a true si usas HTTPS en producción
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   })
 );
@@ -52,12 +67,13 @@ app.use("/api/auth", authRoutes);
 app.use("/api/openia", openIaRoutes);
 
 // Error handling middleware
-app.use(
-  (err: Error, _req: Request, res: Response, _next: express.NextFunction) => {
-    console.error(err.stack);
-    res.status(500).json({ error: "Something went wrong!" });
-  }
-);
+app.use((err: Error, _req: Request, res: Response, _next: any) => {
+  console.error(err.stack);
+  res.status(500).json({
+    message: "Internal Server Error",
+    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+  });
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

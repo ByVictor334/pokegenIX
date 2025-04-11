@@ -2,17 +2,23 @@ import express from "express";
 import {
   loginWithGoogle,
   loginWithGoogleCallback,
-  loginWithGoogleCallbackMobile,
+  loginWithGoogleMobileCallback,
+  logout,
   userProfile,
-  getVerifyGoogleIdToken,
 } from "../Controllers/AuthController";
+
 import isAuthenticated from "../Middlewares/AuthMiddleware";
 const router = express.Router();
 
+// Web authentication routes
 router.get("/login/google", loginWithGoogle);
 router.get("/login/google/callback", loginWithGoogleCallback);
-router.post("/login/google/verify-token", getVerifyGoogleIdToken);
-router.get("/login/google/callback/mobile", loginWithGoogleCallbackMobile);
 
+// Mobile authentication routes
+router.post("/login/google/mobile", loginWithGoogleMobileCallback);
+
+// Protected routes
 router.get("/profile", isAuthenticated, userProfile);
+router.post("/logout", isAuthenticated, logout);
+
 export default router;

@@ -13,6 +13,25 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+declare module "express-session" {
+  interface SessionData {
+    token?: {
+      id: string;
+      access_token: string;
+      id_token: string;
+      refresh_token: string;
+      expires_in: number;
+      role: string;
+    };
+    user?: {
+      name: string;
+      email: string;
+      picture: string;
+      sub: string;
+    };
+  }
+}
+
 async function getPrompt(image: string) {
   const prompt = `Analyze the image and identify the main object. Focus exclusively on its physical characteristics: texture, color, and shape. Ignore background elements or context.
 Return a concise description in English, formatted as structured JSON like this:
@@ -290,7 +309,7 @@ export const createPokedexBasedOnImage = async (
     const storageRef = ref(storage, `pokedex/${fileName}`);
 
     // Process image with Sharp before uploading
-    let processedBuffer;
+    let processedBuffer: Buffer;
     try {
       processedBuffer = await sharp(imageBuffer)
         .png() // Ensure it's in PNG format

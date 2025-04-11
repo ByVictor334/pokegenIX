@@ -1,58 +1,27 @@
 import { Request, Response } from "express";
 import { UserModel } from "../Models/UserModel";
+import { OAuth2Client } from "google-auth-library";
 
-// Add interface for token stored in session
-interface GoogleToken {
-  id: string;
-  name: string;
-  email: string;
-  picture: string;
-  role: string;
-  access_token: string;
-  id_token: string;
-  refresh_token: string;
-  expires_in: number;
-}
-
-// Extend express session to include our token
-declare module "express-session" {
-  interface Session {
-    token?: GoogleToken;
-  }
-}
-
-// Add interface for Google OAuth response
-interface GoogleOAuthResponse {
-  access_token: string;
-  id_token: string;
-  refresh_token: string;
-  expires_in: number;
-  error?: string;
-}
-
-// Add interface for Google Profile response
-interface GoogleProfile {
-  sub: string;
-  name: string;
-  given_name: string;
-  family_name: string;
-  picture: string;
-  email: string;
-  email_verified: boolean;
-  locale: string;
-  error?: string;
-}
-
-const AUTH_BASE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+const REDIRECT_URI = process.env.REDIRECT_URI;
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_ID_MOBILE = process.env.CLIENT_ID_MOBILE;
-const REDIRECT_URI = process.env.REDIRECT_URI;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const SCOPES = ["openid", "email", "profile"];
 
-const { OAuth2Client } = require("google-auth-library");
-const client = new OAuth2Client(CLIENT_ID_MOBILE);
+const oauth2ClientWeb = new OAuth2Client({
+  clientId: CLIENT_ID,
+  clientSecret: CLIENT_SECRET,
+  redirectUri: REDIRECT_URI,
+});
+const clientMobile = new OAuth2Client(CLIENT_ID_MOBILE);
 
-const createUser = async (profile: GoogleProfile) => {
+const saveUserProfile = async (profile: {
+  name: string;
+  email: string;
+  picture: string;
+  provider: string;
+  googleId: string;
+}) => {
   const user = await UserModel.findOneAndUpdate(
     { email: profile.email },
     {
@@ -60,7 +29,7 @@ const createUser = async (profile: GoogleProfile) => {
         name: profile.name,
         email: profile.email,
         picture: profile.picture,
-        googleId: profile.sub,
+        googleId: profile.googleId,
         lastLogin: new Date(),
       },
       $setOnInsert: {
@@ -72,39 +41,68 @@ const createUser = async (profile: GoogleProfile) => {
   return user;
 };
 
-async function verifyGoogleIdToken(idToken: string) {
-  console.log(
-    "%csrcControllersAuthController.ts:82 idToken",
-    "color: white; background-color: #007acc;",
-    idToken
-  );
-  const ticket = await client.verifyIdToken({
+async function verifyGoogleIdTokenMobile(idToken: string) {
+  const ticket = await clientMobile.verifyIdToken({
     idToken,
-    audience: CLIENT_ID_MOBILE, // verifica que el token fue emitido para tu app
+    audience: CLIENT_ID_MOBILE,
   });
 
   const payload = ticket.getPayload();
-  console.log(
-    "%csrcControllersAuthController.ts:82 payload",
-    "color: white; background-color: #007acc;",
-    payload
-  );
-  // Puedes acceder a datos como:
-  // payload.email, payload.name, payload.sub, etc.
-
-  return payload; // lo usas para crear la sesión o usuario
+  return payload;
 }
 
-const loginWithGoogle = async (_req: Request, res: Response): Promise<void> => {
-  const params = new URLSearchParams({
-    response_type: "code",
-    client_id: CLIENT_ID as string,
-    redirect_uri: REDIRECT_URI as string,
-    scope: SCOPES.join(" "),
-    state: "random_string_123", // opcional, útil para CSRF protection
+async function verifyGoogleIdTokenWeb(idToken: string) {
+  const ticket = await oauth2ClientWeb.verifyIdToken({
+    idToken,
+    audience: CLIENT_ID,
   });
 
-  res.redirect(`${AUTH_BASE_URL}?${params.toString()}`);
+  const payload = ticket.getPayload();
+  return payload;
+}
+
+// const refreshToken = async (
+//   req: Request,
+//   res: Response
+// ): Promise<Response | void> => {
+//   try {
+//     if (!req.session.token?.refresh_token) {
+//       return res.status(400).json({ message: "No refresh token available" });
+//     }
+
+//     const { tokens } = await oauth2ClientWeb.refreshAccessToken(
+//       req.session.token?.access_token as string
+//     );
+//     oauth2ClientWeb.setCredentials(tokens);
+
+//     const payload = await verifyGoogleIdTokenWeb(tokens.id_token as string);
+
+//     req.session.token = {
+//       ...req.session.token,
+//       access_token: tokens.access_token as string,
+//       id_token: tokens.id_token as string,
+//       expires_in: payload?.exp as number,
+//     };
+
+//     return res.status(200).json({
+//       message: "Token refreshed successfully",
+//       token: req.session.token,
+//     });
+//   } catch (error) {
+//     console.error("Error refreshing token:", error);
+//     return res.status(500).json({ message: "Error refreshing token" });
+//   }
+// };
+
+const loginWithGoogle = async (_req: Request, res: Response): Promise<void> => {
+  const authUrl = oauth2ClientWeb.generateAuthUrl({
+    access_type: "offline",
+    scope: SCOPES,
+    redirect_uri: REDIRECT_URI,
+    prompt: "consent",
+  });
+
+  res.redirect(authUrl);
 };
 
 const loginWithGoogleCallback = async (
@@ -114,128 +112,103 @@ const loginWithGoogleCallback = async (
   const code = req.query.code;
 
   if (!code) {
-    return res.status(400).send("Falta el código de autorización");
+    return res.status(400).json({ message: "Authorization code is required" });
   }
 
   try {
-    const params = new URLSearchParams({
-      code: code as string,
-      client_id: process.env.CLIENT_ID as string,
-      client_secret: process.env.CLIENT_SECRET as string,
-      redirect_uri: process.env.REDIRECT_URI as string,
-      grant_type: "authorization_code",
-    });
+    const { tokens } = await oauth2ClientWeb.getToken(code as string);
+    oauth2ClientWeb.setCredentials(tokens);
 
-    const response = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-    });
+    const payload = await verifyGoogleIdTokenWeb(tokens.id_token as string);
 
-    const data = (await response.json()) as GoogleOAuthResponse;
-
-    if (data.error) {
-      console.error("Error al intercambiar el código:", data);
-      return res.status(500).send("Error al obtener el token");
+    if (!payload?.email || !payload?.name || !payload?.sub) {
+      return res.status(400).json({ message: "Invalid token payload" });
     }
 
-    const profileRes = await fetch(
-      "https://www.googleapis.com/oauth2/v3/userinfo",
-      {
-        headers: { Authorization: `Bearer ${data.access_token}` },
-      }
-    );
-
-    const profile = (await profileRes.json()) as GoogleProfile;
-
-    // Guardar o actualizar en base de datos
-    const user = await createUser(profile);
-    // 💾 Guardar el token en la sesión
-    // Guardar en sesión
+    const user = await saveUserProfile({
+      name: payload.name,
+      email: payload.email,
+      picture: payload.picture as string,
+      provider: "google",
+      googleId: payload.sub,
+    });
 
     req.session.token = {
       id: user.id,
+      access_token: tokens.access_token as string,
+      id_token: tokens.id_token as string,
+      refresh_token: tokens.refresh_token as string,
+      expires_in: payload.exp as number,
+      role: user.role,
+    };
+    req.session.user = {
       name: user.name,
       email: user.email,
       picture: user.picture,
-      role: user.role,
-      access_token: data.access_token,
-      id_token: data.id_token,
-      refresh_token: data.refresh_token,
-      expires_in: data.expires_in,
+      sub: user.googleId,
     };
 
-    // respond with a json
-    res.status(200).json({
-      message: "Login successful",
-      user: user,
-      token: req.session.token,
-    });
+    res.redirect(process.env.CLIENT_URL || "http://localhost:3000/auth");
   } catch (error) {
-    return res.status(500).send("Error interno");
+    console.error("Error in web login:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-const loginWithGoogleCallbackMobile = async (
+const loginWithGoogleMobileCallback = async (
   req: Request,
   res: Response
 ): Promise<Response | void> => {
-  const { code, code_verifier } = req.body;
+  const { id_token } = req.body;
 
-  if (!code || !code_verifier) {
-    return res.status(400).json({ error: "Faltan parámetros requeridos" });
+  if (!id_token) {
+    return res.status(400).json({ message: "ID token is required" });
   }
 
   try {
-    const params = new URLSearchParams({
-      code,
-      client_id: process.env.CLIENT_ID as string,
-      redirect_uri: "com.ryogan.PokedexIA:/oauth2redirect", // debe coincidir con el de Google Console
-      grant_type: "authorization_code",
-      code_verifier,
-    });
+    const payload = await verifyGoogleIdTokenMobile(id_token);
 
-    const response = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-    });
-
-    const data = (await response.json()) as GoogleOAuthResponse;
-
-    if (data.error) {
-      console.error("Error al intercambiar código (iOS):", data);
-      return res.status(500).json({ error: "Error al obtener token" });
+    if (!payload?.email || !payload?.name || !payload?.sub) {
+      return res.status(400).json({ message: "Invalid token payload" });
     }
 
-    const profileRes = await fetch(
-      "https://www.googleapis.com/oauth2/v3/userinfo",
-      {
-        headers: { Authorization: `Bearer ${data.access_token}` },
-      }
-    );
-
-    const profile = (await profileRes.json()) as GoogleProfile;
-
-    // Opcional: verificar el id_token (puedo ayudarte con eso si quieres)
-    // Opcional: guardar sesión, base de datos, etc.
-    const user = await createUser(profile);
-
-    // 🔁 Devolver token a la app o iniciar sesión en backend
-    res.json({
-      access_token: data.access_token,
-      id_token: data.id_token,
-      refresh_token: data.refresh_token,
-      expires_in: data.expires_in,
-      user: user,
+    const user = await saveUserProfile({
+      name: payload.name,
+      email: payload.email,
+      picture: payload.picture as string,
+      provider: "google",
+      googleId: payload.sub,
     });
-  } catch (err) {
-    console.error("Error en /mobile/callback:", err);
-    res.status(500).json({ error: "Error interno del servidor" });
+
+    req.session.token = {
+      id: user.id,
+      access_token: id_token,
+      id_token: id_token,
+      refresh_token: "",
+      expires_in: payload.exp as number,
+      role: user.role,
+    };
+    req.session.user = {
+      name: user.name,
+      email: user.email,
+      picture: user.picture,
+      sub: user.googleId,
+    };
+
+    res.status(200).json({
+      message: "Login successful",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        picture: user.picture,
+        role: user.role,
+      },
+      token: req.session.token,
+    });
+  } catch (error) {
+    console.error("Error in mobile login:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -243,47 +216,59 @@ const userProfile = async (
   req: Request,
   res: Response
 ): Promise<Response | void> => {
-  const token = req.session.token as GoogleToken;
-
   try {
-    const profile = await UserModel.findById(token.id);
+    const device = req.device;
 
-    if (!profile) {
-      return res.status(401).send({
-        message: "User not found",
-      });
+    let user;
+
+    if (device === "mobile") {
+      const payload = await verifyGoogleIdTokenMobile(req.body.id_token);
+      user = await UserModel.findOne({ email: payload?.email });
     }
 
-    return res.status(200).json(profile);
-  } catch (err) {
-    console.error("Error al obtener perfil:", err);
-    return res.status(500).send("Error al obtener perfil");
+    if (device === "web") {
+      user = await UserModel.findOne({ email: req.session.user?.email });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "Profile retrieved successfully",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        picture: user.picture,
+        role: user.role,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    console.error("Error retrieving profile:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-const getVerifyGoogleIdToken = async (req: Request, res: Response) => {
-  const { id_token } = req.body;
-
-  try {
-    const userInfo = await verifyGoogleIdToken(id_token);
-
-    // Aquí puedes buscar en tu DB al usuario por `userInfo.sub` o `userInfo.email`
-    // o crearlo si no existe
-
-    // Por ejemplo:
-    // const user = await User.findOrCreate({ googleId: userInfo.sub })
-
-    res.json({ success: true, user: userInfo });
-  } catch (err) {
-    console.error("Token inválido", err);
-    res.status(401).json({ error: "Token no válido" });
-  }
+const logout = async (
+  req: Request,
+  res: Response
+): Promise<Response | void> => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Error destroying session:", err);
+      return res.status(500).json({ message: "Error during logout" });
+    }
+    res.clearCookie("connect.sid");
+    return res.json({ message: "Logged out successfully" });
+  });
 };
 
 export {
   loginWithGoogle,
   loginWithGoogleCallback,
-  loginWithGoogleCallbackMobile,
+  loginWithGoogleMobileCallback,
   userProfile,
-  getVerifyGoogleIdToken,
+  logout,
 };
