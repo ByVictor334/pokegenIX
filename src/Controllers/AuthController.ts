@@ -79,7 +79,11 @@ async function verifyGoogleIdToken(idToken: string) {
   });
 
   const payload = ticket.getPayload();
-
+  console.log(
+    "%csrcControllersAuthController.ts:82 payload",
+    "color: white; background-color: #007acc;",
+    payload
+  );
   // Puedes acceder a datos como:
   // payload.email, payload.name, payload.sub, etc.
 
