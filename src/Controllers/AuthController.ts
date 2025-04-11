@@ -45,13 +45,12 @@ interface GoogleProfile {
 
 const AUTH_BASE_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_ID_MOBILE = process.env.CLIENT_ID_MOBILE;
 const REDIRECT_URI = process.env.REDIRECT_URI;
 const SCOPES = ["openid", "email", "profile"];
 
 const { OAuth2Client } = require("google-auth-library");
-const client = new OAuth2Client(
-  "1019043913093-mjpolve8q18hrmr8nc6uk6cub8n2gbnt.apps.googleusercontent.com"
-);
+const client = new OAuth2Client(CLIENT_ID_MOBILE);
 
 const createUser = async (profile: GoogleProfile) => {
   const user = await UserModel.findOneAndUpdate(
@@ -74,15 +73,9 @@ const createUser = async (profile: GoogleProfile) => {
 };
 
 async function verifyGoogleIdToken(idToken: string) {
-  console.log(
-    "%csrcControllersAuthController.ts:83 ticket",
-    "color: white; background-color: #007acc;",
-    idToken
-  );
   const ticket = await client.verifyIdToken({
     idToken,
-    audience:
-      "1019043913093-mjpolve8q18hrmr8nc6uk6cub8n2gbnt.apps.googleusercontent.com", // verifica que el token fue emitido para tu app
+    audience: CLIENT_ID_MOBILE, // verifica que el token fue emitido para tu app
   });
 
   const payload = ticket.getPayload();
