@@ -6,6 +6,8 @@ import fs from "fs";
 import path from "path";
 import sharp from "sharp";
 import fetch from "node-fetch";
+import { PokemonModel } from "../Models/PokemonModel";
+import { UserModel } from "../Models/UserModel";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -266,6 +268,13 @@ export const createPokedexBasedOnImage = async (
       return;
     }
 
+    const User = await UserModel.findById(req.body.owner);
+
+    if (!User) {
+      res.status(400).json({ error: "User not found" });
+      return;
+    }
+
     const imageLink = req.body.imageLink;
 
     // Fetch the image from URL
@@ -307,9 +316,33 @@ export const createPokedexBasedOnImage = async (
     const imageUrl = await getDownloadURL(storageRef);
     const pokedex = await getPokedexBasedOnImage(imageUrl);
 
+    const pokedexJson = JSON.parse(pokedex as string);
+
+    if (!pokedexJson || JSON.stringify(pokedexJson) === "{}") {
+      res.status(400).json({ error: "No pokedex data provided" });
+      return;
+    }
+
+    const pokemon = await PokemonModel.create({
+      name: pokedexJson.name,
+      type: pokedexJson.type,
+      color: pokedexJson.color,
+      description: pokedexJson.description,
+      abilities: pokedexJson.abilities,
+      base_stats: pokedexJson.base_stats,
+      rarity: pokedexJson.rarity,
+      habitat: pokedexJson.habitat,
+      behavior: pokedexJson.behavior,
+      preferred_items: pokedexJson.preferred_items,
+      height: pokedexJson.height,
+      weight: pokedexJson.weight,
+      owner: User._id,
+      image: imageUrl,
+    });
+
     res.json({
       success: true,
-      pokedex: pokedex,
+      pokemon: pokemon,
     });
   } catch (error) {
     console.error("Error processing request:", error);
