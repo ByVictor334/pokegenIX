@@ -47,8 +47,8 @@ const router = express.Router();
  */
 router.post(
   "/create-pokemon-description",
-  isAuthenticated,
   upload.single("image"),
+  isAuthenticated,
   createPokemonBasedOnImageDescription
 );
 
