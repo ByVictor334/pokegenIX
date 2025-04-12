@@ -20,6 +20,10 @@ async function isAuthenticated(
   next: NextFunction
 ): Promise<void | Response> {
   try {
+    console.log(
+      "%[[[[[[[cHello]]]]]]] srcMiddlewaresAuthMiddleware.ts:23 ",
+      "background: green; color: white; display: block;"
+    );
     if (req.session.token && req.session.token.access_token) {
       // Verify web access token
       const ticket = await clientWeb.verifyIdToken({
