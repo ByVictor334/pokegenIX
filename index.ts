@@ -8,7 +8,6 @@ import MongoStore from "connect-mongo";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./src/config/swagger";
-
 // Load environment variables
 dotenv.config();
 

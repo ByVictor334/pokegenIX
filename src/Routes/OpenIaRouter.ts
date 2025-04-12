@@ -69,9 +69,9 @@ router.post(
  *           schema:
  *             type: object
  *             required:
- *               - imageUrl
+ *               - imageLink
  *             properties:
- *               imageUrl:
+ *               imageLink:
  *                 type: string
  *                 description: URL of the image to generate Pokedex entry from
  *     responses:
@@ -89,7 +89,7 @@ router.post("/create-pokedex", isAuthenticated, createPokedexBasedOnImage);
 /**
  * @swagger
  * /api/openia/user-pokemons:
- *   get:
+ *   post:
  *     summary: Get all pokemons for the authenticated user
  *     tags: [OpenAI]
  *     description: Retrieves all pokemons owned by the authenticated user
@@ -117,12 +117,12 @@ router.post("/create-pokedex", isAuthenticated, createPokedexBasedOnImage);
  *       500:
  *         description: Server error
  */
-router.get("/user-pokemons", isAuthenticated, getUserPokemons);
+router.post("/user-pokemons", isAuthenticated, getUserPokemons);
 
 /**
  * @swagger
  * /api/openia/pokemon/{pokemonId}:
- *   get:
+ *   post:
  *     summary: Get details of a specific pokemon
  *     tags: [OpenAI]
  *     description: Retrieves detailed information about a specific pokemon owned by the authenticated user
@@ -157,6 +157,6 @@ router.get("/user-pokemons", isAuthenticated, getUserPokemons);
  *       500:
  *         description: Server error
  */
-router.get("/pokemon/:pokemonId", isAuthenticated, getPokemonDetails);
+router.post("/pokemon/:pokemonId", isAuthenticated, getPokemonDetails);
 
 export default router;

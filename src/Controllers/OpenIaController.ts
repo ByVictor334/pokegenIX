@@ -7,8 +7,6 @@ import path from "path";
 import sharp from "sharp";
 import fetch from "node-fetch";
 import { PokemonModel } from "../Models/PokemonModel";
-import { UserModel } from "../Models/UserModel";
-import { verifyGoogleIdTokenMobile } from "./AuthController";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -66,19 +64,19 @@ The output must be under 1000 characters total. Do not include any background, l
   return description;
 }
 
-async function getPokemonImage(_description: string) {
-  // const prompt = `
-  // Create a single, original collectible creature inspired by the following description: ${description}. The creature must be cute, stylized, and have a simple yet iconic design. It should feature bright, appealing colors, large expressive eyes, and a friendly but battle-ready appearance. Its form should reflect the shape, texture, and color of the description in a creative and playful way. Render the creature in full-body, with clean lines and a digital art style reminiscent of Nintendo or creature-collecting games. The final image should show ONLY ONE creature, centered on a pure white background, and with no text.
-  // `;
-  // const pokemon = await openai.images.generate({
-  //   model: "dall-e-3",
-  //   prompt: prompt,
-  //   n: 1,
-  //   size: "1024x1024",
-  // });
-  // return pokemon.data[0].url;
+async function getPokemonImage(description: string) {
+  const prompt = `
+  Create a single, original collectible creature inspired by the following description: ${description}. The creature must be cute, stylized, and have a simple yet iconic design. It should feature bright, appealing colors, large expressive eyes, and a friendly but battle-ready appearance. Its form should reflect the shape, texture, and color of the description in a creative and playful way. Render the creature in full-body, with clean lines and a digital art style reminiscent of Nintendo or creature-collecting games. The final image should show ONLY ONE creature, centered on a pure white background, and with no text.
+  `;
+  const pokemon = await openai.images.generate({
+    model: "dall-e-3",
+    prompt: prompt,
+    n: 1,
+    size: "1024x1024",
+  });
+  return pokemon.data[0].url;
 
-  return "https://firebasestorage.googleapis.com/v0/b/pokegenix-a40c3.firebasestorage.app/o/pokedex%2FChatGPT%20Image%20Apr%2010%2C%202025%2C%2012_17_45%20AM.png?alt=media&token=cb36e308-ad60-4415-a725-51182c4a8669";
+  // return "https://firebasestorage.googleapis.com/v0/b/pokegenix-a40c3.firebasestorage.app/o/pokedex%2FChatGPT%20Image%20Apr%2010%2C%202025%2C%2012_17_45%20AM.png?alt=media&token=cb36e308-ad60-4415-a725-51182c4a8669";
 }
 
 async function getPokedexBasedOnImage(image: string) {
@@ -199,21 +197,6 @@ export const createPokedexBasedOnImage = async (
       res.status(400).json({ error: "No image URL provided" });
       return;
     }
-    console.log(req.body);
-    let userEmail;
-    if (req.device === "web") {
-      userEmail = req.session.user?.email;
-    } else {
-      const payload = await verifyGoogleIdTokenMobile(req.body.id_token);
-      userEmail = payload?.email;
-    }
-
-    const User = await UserModel.findOne({ email: userEmail });
-
-    if (!User) {
-      res.status(400).json({ error: "User not found" });
-      return;
-    }
 
     const imageLink = req.body.imageLink;
 
@@ -267,7 +250,7 @@ export const createPokedexBasedOnImage = async (
       preferred_items: pokedexJson.preferred_items,
       height: pokedexJson.height,
       weight: pokedexJson.weight,
-      owner: User._id,
+      owner: req.user._id,
       image: imageUrl,
     });
 
@@ -289,22 +272,7 @@ export const getUserPokemons = async (
   res: Response
 ): Promise<void> => {
   try {
-    let userEmail;
-    if (req.device === "web") {
-      userEmail = req.session.user?.email;
-    } else {
-      const payload = await verifyGoogleIdTokenMobile(req.body.id_token);
-      userEmail = payload?.email;
-    }
-
-    const User = await UserModel.findOne({ email: userEmail });
-
-    if (!User) {
-      res.status(400).json({ error: "User not found" });
-      return;
-    }
-
-    const pokemons = await PokemonModel.find({ owner: User._id });
+    const pokemons = await PokemonModel.find({ owner: req.user._id });
 
     res.json({
       success: true,
@@ -331,24 +299,9 @@ export const getPokemonDetails = async (
       return;
     }
 
-    let userEmail;
-    if (req.device === "web") {
-      userEmail = req.session.user?.email;
-    } else {
-      const payload = await verifyGoogleIdTokenMobile(req.body.id_token);
-      userEmail = payload?.email;
-    }
-
-    const User = await UserModel.findOne({ email: userEmail });
-
-    if (!User) {
-      res.status(400).json({ error: "User not found" });
-      return;
-    }
-
     const pokemon = await PokemonModel.findOne({
       _id: pokemonId,
-      owner: User._id,
+      owner: req.user._id,
     });
 
     if (!pokemon) {
