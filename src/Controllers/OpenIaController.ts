@@ -8,6 +8,7 @@ import sharp from "sharp";
 import fetch from "node-fetch";
 import { PokemonModel } from "../Models/PokemonModel";
 import { UserModel } from "../Models/UserModel";
+import { verifyGoogleIdTokenMobile } from "./AuthController";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -130,94 +131,6 @@ Do not wrap in markdown or code blocks. Do not include any explanation or labels
   return description;
 }
 
-export const createPokemonBasedOnImage = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    if (!req.file) {
-      res.status(400).json({ error: "No image file uploaded" });
-      return;
-    }
-
-    // Upload image to Firebase Storage
-    const timestamp = Date.now();
-    const fileName = `pokemon_${timestamp}_${req.file.originalname}`;
-    const storageRef = ref(storage, `pokemon/${fileName}`);
-
-    await uploadBytes(storageRef, req.file.buffer);
-    const imageUrl = await getDownloadURL(storageRef);
-
-    // Create temp directory if it doesn't exist
-    const tempDir = path.join(process.cwd(), "temp");
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir);
-    }
-
-    // Process image with Sharp
-    let processedImageBuffer;
-    try {
-      processedImageBuffer = await sharp(req.file.buffer)
-        .resize(1024, 1024, { fit: "contain" }) // Resize to required dimensions
-        .ensureAlpha() // Ensure image has alpha channel (RGBA)
-        .png() // Convert to PNG
-        .toBuffer();
-    } catch (sharpError) {
-      console.error("Sharp processing error:", sharpError);
-      res.status(400).json({
-        success: false,
-        error:
-          "Invalid image format. Please upload a valid image file (PNG, JPEG, GIF, or WebP).",
-      });
-      return;
-    }
-
-    const tempFilePath = path.join(tempDir, `processed_${fileName}.png`);
-    fs.writeFileSync(tempFilePath, processedImageBuffer);
-
-    // Create a mask image with transparent background
-    const maskBuffer = await sharp({
-      create: {
-        width: 1024,
-        height: 1024,
-        channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      },
-    })
-      .png()
-      .toBuffer();
-
-    const maskFilePath = path.join(tempDir, `mask_${fileName}.png`);
-    fs.writeFileSync(maskFilePath, maskBuffer);
-
-    const prompt =
-      "Transform this into a Pokemon character with vibrant colors and unique features while maintaining the original shape and style";
-
-    const response = await openai.images.edit({
-      image: fs.createReadStream(tempFilePath),
-      prompt: prompt,
-      n: 1,
-      size: "1024x1024",
-    });
-
-    // Clean up temporary files
-    fs.unlinkSync(tempFilePath);
-    fs.unlinkSync(maskFilePath);
-
-    res.json({
-      success: true,
-      originalImage: imageUrl,
-      generatedImage: response.data[0].url,
-    });
-  } catch (error) {
-    console.error("Error processing request:", error);
-    res.status(500).json({
-      success: false,
-      error: `Error processing request: ${error.message}`,
-    });
-  }
-};
-
 export const createPokemonBasedOnImageDescription = async (
   req: Request,
   res: Response
@@ -286,8 +199,16 @@ export const createPokedexBasedOnImage = async (
       res.status(400).json({ error: "No image URL provided" });
       return;
     }
+    console.log(req.body);
+    let userEmail;
+    if (req.device === "web") {
+      userEmail = req.session.user?.email;
+    } else {
+      const payload = await verifyGoogleIdTokenMobile(req.body.id_token);
+      userEmail = payload?.email;
+    }
 
-    const User = await UserModel.findById(req.body.owner);
+    const User = await UserModel.findOne({ email: userEmail });
 
     if (!User) {
       res.status(400).json({ error: "User not found" });
@@ -310,19 +231,10 @@ export const createPokedexBasedOnImage = async (
 
     // Process image with Sharp before uploading
     let processedBuffer: Buffer;
-    try {
-      processedBuffer = await sharp(imageBuffer)
-        .png() // Ensure it's in PNG format
-        .toBuffer();
-    } catch (sharpError) {
-      console.error("Sharp processing error:", sharpError);
-      res.status(400).json({
-        success: false,
-        error:
-          "Invalid image format. Please upload a valid image file (PNG, JPEG, GIF, or WebP).",
-      });
-      return;
-    }
+
+    processedBuffer = await sharp(imageBuffer)
+      .png() // Ensure it's in PNG format
+      .toBuffer();
 
     // Upload to Firebase Storage with metadata
     await uploadBytes(storageRef, processedBuffer, {
@@ -368,6 +280,93 @@ export const createPokedexBasedOnImage = async (
     res.status(500).json({
       success: false,
       error: `Error processing request: ${error.message}`,
+    });
+  }
+};
+
+export const getUserPokemons = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    let userEmail;
+    if (req.device === "web") {
+      userEmail = req.session.user?.email;
+    } else {
+      const payload = await verifyGoogleIdTokenMobile(req.body.id_token);
+      userEmail = payload?.email;
+    }
+
+    const User = await UserModel.findOne({ email: userEmail });
+
+    if (!User) {
+      res.status(400).json({ error: "User not found" });
+      return;
+    }
+
+    const pokemons = await PokemonModel.find({ owner: User._id });
+
+    res.json({
+      success: true,
+      pokemons: pokemons,
+    });
+  } catch (error) {
+    console.error("Error fetching user pokemons:", error);
+    res.status(500).json({
+      success: false,
+      error: `Error fetching user pokemons: ${error.message}`,
+    });
+  }
+};
+
+export const getPokemonDetails = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { pokemonId } = req.params;
+
+    if (!pokemonId) {
+      res.status(400).json({ error: "Pokemon ID is required" });
+      return;
+    }
+
+    let userEmail;
+    if (req.device === "web") {
+      userEmail = req.session.user?.email;
+    } else {
+      const payload = await verifyGoogleIdTokenMobile(req.body.id_token);
+      userEmail = payload?.email;
+    }
+
+    const User = await UserModel.findOne({ email: userEmail });
+
+    if (!User) {
+      res.status(400).json({ error: "User not found" });
+      return;
+    }
+
+    const pokemon = await PokemonModel.findOne({
+      id: pokemonId,
+      owner: User.id,
+    });
+
+    if (!pokemon) {
+      res
+        .status(404)
+        .json({ error: "Pokemon not found or you don't have access to it" });
+      return;
+    }
+
+    res.json({
+      success: true,
+      pokemon: pokemon,
+    });
+  } catch (error) {
+    console.error("Error fetching pokemon details:", error);
+    res.status(500).json({
+      success: false,
+      error: `Error fetching pokemon details: ${error.message}`,
     });
   }
 };

@@ -1,8 +1,9 @@
 import express from "express";
 import {
-  createPokemonBasedOnImage,
   createPokemonBasedOnImageDescription,
   createPokedexBasedOnImage,
+  getUserPokemons,
+  getPokemonDetails,
 } from "../Controllers/OpenIaController";
 import isAuthenticated from "../Middlewares/AuthMiddleware";
 import upload from "../Middlewares/UploadMiddleware";
@@ -15,41 +16,6 @@ const router = express.Router();
  *   name: OpenAI
  *   description: OpenAI integration endpoints
  */
-
-/**
- * @swagger
- * /api/openia/create-pokemon:
- *   post:
- *     summary: Create a Pokemon based on an image
- *     tags: [OpenAI]
- *     description: Generates a Pokemon character based on the provided image
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required:
- *               - image
- *             properties:
- *               image:
- *                 type: string
- *                 format: binary
- *                 description: Image file to generate Pokemon from
- *     responses:
- *       200:
- *         description: Pokemon generated successfully
- *       400:
- *         description: Invalid image format or missing image
- *       500:
- *         description: Server error
- */
-router.post(
-  "/create-pokemon",
-  // isAuthenticated,
-  upload.single("image"),
-  createPokemonBasedOnImage
-);
 
 /**
  * @swagger
@@ -81,6 +47,7 @@ router.post(
  */
 router.post(
   "/create-pokemon-description",
+  isAuthenticated,
   upload.single("image"),
   createPokemonBasedOnImageDescription
 );
@@ -118,5 +85,78 @@ router.post(
  *         description: Server error
  */
 router.post("/create-pokedex", isAuthenticated, createPokedexBasedOnImage);
+
+/**
+ * @swagger
+ * /api/openia/user-pokemons:
+ *   get:
+ *     summary: Get all pokemons for the authenticated user
+ *     tags: [OpenAI]
+ *     description: Retrieves all pokemons owned by the authenticated user
+ *     security:
+ *       - sessionAuth: []
+ *       - idTokenAuth: []
+ *     responses:
+ *       200:
+ *         description: User pokemons retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 pokemons:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Pokemon'
+ *       400:
+ *         description: User not found
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Server error
+ */
+router.get("/user-pokemons", isAuthenticated, getUserPokemons);
+
+/**
+ * @swagger
+ * /api/openia/pokemon/{pokemonId}:
+ *   get:
+ *     summary: Get details of a specific pokemon
+ *     tags: [OpenAI]
+ *     description: Retrieves detailed information about a specific pokemon owned by the authenticated user
+ *     security:
+ *       - sessionAuth: []
+ *       - idTokenAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: pokemonId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the pokemon to retrieve
+ *     responses:
+ *       200:
+ *         description: Pokemon details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 pokemon:
+ *                   $ref: '#/components/schemas/Pokemon'
+ *       400:
+ *         description: Pokemon ID is required or user not found
+ *       401:
+ *         description: Not authenticated
+ *       404:
+ *         description: Pokemon not found or user doesn't have access to it
+ *       500:
+ *         description: Server error
+ */
+router.get("/pokemon/:pokemonId", isAuthenticated, getPokemonDetails);
 
 export default router;

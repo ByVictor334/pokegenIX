@@ -41,7 +41,7 @@ const saveUserProfile = async (profile: {
   return user;
 };
 
-async function verifyGoogleIdTokenMobile(idToken: string) {
+export async function verifyGoogleIdTokenMobile(idToken: string) {
   const ticket = await clientMobile.verifyIdToken({
     idToken,
     audience: CLIENT_ID_MOBILE,
