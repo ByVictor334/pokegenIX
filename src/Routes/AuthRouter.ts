@@ -75,7 +75,7 @@ router.post("/login/google/mobile", loginWithGoogleMobileCallback);
 /**
  * @swagger
  * /api/auth/profile:
- *   get:
+ *   post:
  *     summary: Get user profile
  *     tags: [Authentication]
  *     description: Retrieve the authenticated user's profile

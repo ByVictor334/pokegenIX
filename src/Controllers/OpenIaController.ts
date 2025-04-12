@@ -176,7 +176,6 @@ export const createPokemonBasedOnImageDescription = async (
 
     res.json({
       success: true,
-      description: description,
       pokemon: pokemonImage,
     });
   } catch (error) {
