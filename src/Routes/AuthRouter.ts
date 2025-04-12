@@ -88,7 +88,7 @@ router.post("/login/google/mobile", loginWithGoogleMobileCallback);
  *       401:
  *         description: Not authenticated
  */
-router.get("/profile", isAuthenticated, userProfile);
+router.post("/profile", isAuthenticated, userProfile);
 
 /**
  * @swagger

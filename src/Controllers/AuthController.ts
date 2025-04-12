@@ -180,21 +180,6 @@ const loginWithGoogleMobileCallback = async (
       googleId: payload.sub,
     });
 
-    req.session.token = {
-      id: user.id,
-      access_token: id_token,
-      id_token: id_token,
-      refresh_token: "",
-      expires_in: payload.exp as number,
-      role: user.role,
-    };
-    req.session.user = {
-      name: user.name,
-      email: user.email,
-      picture: user.picture,
-      sub: user.googleId,
-    };
-
     res.status(200).json({
       message: "Login successful",
       user: {
@@ -204,7 +189,6 @@ const loginWithGoogleMobileCallback = async (
         picture: user.picture,
         role: user.role,
       },
-      token: req.session.token,
     });
   } catch (error) {
     console.error("Error in mobile login:", error);
@@ -217,18 +201,7 @@ const userProfile = async (
   res: Response
 ): Promise<Response | void> => {
   try {
-    const device = req.device;
-
-    let user;
-
-    if (device === "mobile") {
-      const payload = await verifyGoogleIdTokenMobile(req.body.id_token);
-      user = await UserModel.findOne({ email: payload?.email });
-    }
-
-    if (device === "web") {
-      user = await UserModel.findOne({ email: req.session.user?.email });
-    }
+    const user = await UserModel.findOne({ email: req.user?.email });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

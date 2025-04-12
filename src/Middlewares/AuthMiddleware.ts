@@ -44,9 +44,14 @@ async function isAuthenticated(
       req.device = "web";
       next();
     } else if (req.body.id_token) {
+      console.log("req.body.id_token", req.body.id_token);
       // Verify mobile ID token
       const payload = await verifyGoogleIdTokenMobile(req.body.id_token);
-
+      console.log(
+        "%csrcMiddlewaresAuthMiddleware.ts:50 payload",
+        "color: white; background-color: #007acc;",
+        payload
+      );
       // Find user for mobile client
       const user = await UserModel.findOne({ email: payload?.email });
       if (!user) {
