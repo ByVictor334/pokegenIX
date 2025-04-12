@@ -347,8 +347,8 @@ export const getPokemonDetails = async (
     }
 
     const pokemon = await PokemonModel.findOne({
-      id: pokemonId,
-      owner: User.id,
+      _id: pokemonId,
+      owner: User._id,
     });
 
     if (!pokemon) {
