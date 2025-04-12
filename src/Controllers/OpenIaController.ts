@@ -66,7 +66,7 @@ The output must be under 1000 characters total. Do not include any background, l
 
 async function getPokemonImage(description: string) {
   const prompt = `
-  Create a single, original collectible creature inspired by the following description: ${description}. The creature must be cute, stylized, and have a simple yet iconic design. It should feature bright, appealing colors, large expressive eyes, and a friendly but battle-ready appearance. Its form should reflect the shape, texture, and color of the description in a creative and playful way. Render the creature in full-body, with clean lines and a digital art style reminiscent of Nintendo or creature-collecting games. The final image should show ONLY ONE creature, centered on a pure white background, and with no text.
+  Create a single, original collectible creature inspired by the following description: ${description}. The creature must be cute, stylized, and have a simple yet iconic design. It should feature bright, appealing colors, large expressive eyes, and a friendly but battle-ready appearance. Its form should reflect the shape, texture, and color of the description in a creative and playful way. Render the creature in full-body, with clean lines and a digital art style reminiscent of Nintendo or creature-collecting games. centered and isolated on a pure white background, like a passport photo or product listing on Amazon. No shadows, no textures, no gradients, no reflections, no floor, no walls, no text, no logos, no props. The background must be flat, blank, and perfectly white.
   `;
   const pokemon = await openai.images.generate({
     model: "dall-e-3",
