@@ -19,8 +19,17 @@ async function isAuthenticated(
   res: Response,
   next: NextFunction
 ): Promise<void | Response> {
+  console.log(
+    "%cHello srcMiddlewaresAuthMiddleware.ts:22 ",
+    "background: green; color: white; display: block;"
+  );
   try {
     if (req.body.id_token) {
+      console.log(
+        "%csrcMiddlewaresAuthMiddleware.ts:28 req.body.id_token",
+        "color: white; background-color: #007acc;",
+        req.body.id_token
+      );
       // Verify mobile ID token
       const payload = await verifyGoogleIdTokenMobile(req.body.id_token);
       console.log(
@@ -41,7 +50,11 @@ async function isAuthenticated(
       next();
     } else if (req.session.token && req.session.token.access_token) {
       // Verify web access token}
-
+      console.log(
+        "%csrcMiddlewaresAuthMiddleware.ts:49 req.session.token",
+        "color: white; background-color: #007acc;",
+        req.session.token
+      );
       const ticket = await clientWeb.verifyIdToken({
         idToken: req.session.token.id_token,
         audience: process.env.CLIENT_ID,
