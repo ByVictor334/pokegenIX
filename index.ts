@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import connectDB from "./src/config/database";
 import authRoutes from "./src/Routes/AuthRouter";
 import openIaRoutes from "./src/Routes/OpenIaRouter";
+import pokemonRoutes from "./src/Routes/PokemonRouter";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import cors from "cors";
@@ -76,6 +77,7 @@ app.get("/hello", async (_req: Request, res: Response) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/openia", openIaRoutes);
+app.use("/api/pokemon", pokemonRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: any) => {

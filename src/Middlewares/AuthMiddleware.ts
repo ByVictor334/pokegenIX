@@ -23,6 +23,11 @@ async function isAuthenticated(
     "%cHello srcMiddlewaresAuthMiddleware.ts:22 ",
     "background: green; color: white; display: block;"
   );
+  console.log(
+    "%csrcMiddlewaresAuthMiddleware.ts:26 req.body",
+    "color: white; background-color: #007acc;",
+    req.body
+  );
   try {
     if (req.body.id_token) {
       console.log(

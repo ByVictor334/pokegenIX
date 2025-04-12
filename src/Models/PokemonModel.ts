@@ -35,6 +35,8 @@ const pokemonSchema = new mongoose.Schema({
   height: { type: String, required: true },
   weight: { type: String, required: true },
   image: { type: String, required: true },
+  is_favorite: { type: Boolean, required: true, default: false },
+  is_public: { type: Boolean, required: true, default: false },
 });
 
 export const PokemonModel = mongoose.model("Pokemon", pokemonSchema);
