@@ -24,8 +24,18 @@ async function isAuthenticated(
       "%[[[[[[[cHello]]]]]]] srcMiddlewaresAuthMiddleware.ts:23 ",
       "background: green; color: white; display: block;"
     );
+    console.log(
+      "%csrcMiddlewaresAuthMiddleware.ts:27 req.body",
+      "color: white; background-color: #007acc;",
+      req.body
+    );
     if (req.session.token && req.session.token.access_token) {
-      // Verify web access token
+      // Verify web access token}
+      console.log(
+        "%csrcMiddlewaresAuthMiddleware.ts:33 req.session.token",
+        "color: white; background-color: #007acc;",
+        req.session.token
+      );
       const ticket = await clientWeb.verifyIdToken({
         idToken: req.session.token.id_token,
         audience: process.env.CLIENT_ID,
