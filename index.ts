@@ -6,6 +6,8 @@ import openIaRoutes from "./src/Routes/OpenIaRouter";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./src/config/swagger";
 
 // Load environment variables
 dotenv.config();
@@ -54,6 +56,16 @@ app.use(express.json());
 // Middleware for parsing URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 
+// Swagger UI setup
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customCss: ".swagger-ui .topbar { display: none }",
+  })
+);
+
 // Example route with proper TypeScript types
 app.get("/hello", async (_req: Request, res: Response) => {
   try {
@@ -77,4 +89,7 @@ app.use((err: Error, _req: Request, res: Response, _next: any) => {
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  console.log(
+    `API Documentation available at http://localhost:${port}/api-docs`
+  );
 });
