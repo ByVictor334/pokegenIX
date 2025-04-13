@@ -2,19 +2,25 @@ import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
 import { getNextSequenceValue } from "./CounterModel";
 
-const baseStatsSchema = new mongoose.Schema({
-  health: { type: Number, required: true },
-  attack: { type: Number, required: true },
-  defense: { type: Number, required: true },
-  speed: { type: Number, required: true },
-  intelligence: { type: Number, required: true },
-  special: { type: Number, required: true },
-});
+const baseStatsSchema = new mongoose.Schema(
+  {
+    health: { type: Number, required: true },
+    attack: { type: Number, required: true },
+    defense: { type: Number, required: true },
+    speed: { type: Number, required: true },
+    intelligence: { type: Number, required: true },
+    special: { type: Number, required: true },
+  },
+  { _id: false }
+);
 
-const baseTypeSchema = new mongoose.Schema({
-  type: { type: String, required: true },
-  color: { type: String, required: true },
-});
+const baseTypeSchema = new mongoose.Schema(
+  {
+    type: { type: String, required: true },
+    color: { type: String, required: true },
+  },
+  { _id: false }
+);
 
 const pokemonSchema = new mongoose.Schema({
   id: {

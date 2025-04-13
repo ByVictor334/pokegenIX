@@ -106,7 +106,7 @@ async function getPokedexBasedOnImage(image: string) {
   Based on the provided image, create a detailed JSON file describing an original collectible creature. Do not include any text or labels in the image. The JSON should include:
 {
   "name": "UniqueCreatureName",
-  "types": "[Two elemental with the structure: two of the next option; ${POKEMON_TYPES}]",
+  "types": "[Two elemental with the structure: two of the next option: ${POKEMON_TYPES}]",
   "description": "A short biography of the creature, including its personality, behavior, and environment.",
   "abilities": ["List of special abilities"],
   "base_stats": {
