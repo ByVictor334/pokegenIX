@@ -24,6 +24,7 @@ const POKEMON_TYPES = [
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
 export async function getPrompt(image: string) {
   const prompt = `Analyze the image and identify the main object. Focus exclusively on its physical characteristics: texture, color, and shape. Ignore background elements or context.
 Return a concise description in English, formatted as structured JSON like this:
@@ -32,7 +33,7 @@ Return a concise description in English, formatted as structured JSON like this:
   "color": "primary and secondary colors",
   "shape": "flat and rounded"
 }
-The output must be under 1000 characters total. Do not include any background, lighting, or artistic elements—only the object's physical properties.`;
+The output must be under 1000 characters total. Do not include any background, lighting, or artistic elements—only the main object's physical properties.`;
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",

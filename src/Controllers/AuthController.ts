@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserModel } from "../Models/UserModel";
 import { OAuth2Client } from "google-auth-library";
+import { createStripeCustomer } from "../Utils/Stripe";
 
 const REDIRECT_URI = process.env.REDIRECT_URI;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -22,6 +23,8 @@ const saveUserProfile = async (profile: {
   provider: string;
   googleId: string;
 }) => {
+  // generate stripe customer id
+  const stripeCustomerId = await createStripeCustomer(profile.email);
   const user = await UserModel.findOneAndUpdate(
     { email: profile.email },
     {
@@ -31,6 +34,7 @@ const saveUserProfile = async (profile: {
         picture: profile.picture,
         googleId: profile.googleId,
         lastLogin: new Date(),
+        stripeCustomerId: stripeCustomerId.id,
       },
       $setOnInsert: {
         createdAt: new Date(),

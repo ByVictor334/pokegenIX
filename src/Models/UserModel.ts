@@ -43,6 +43,9 @@ const userSchema = new mongoose.Schema({
   isSuspended: { type: Boolean, default: false },
   imageGenerationCount: { type: Number, default: 0 }, // number of images generated per day
   lastImageGeneration: { type: Date, default: Date.now }, // last image generation date
+  isPremium: { type: Boolean, default: false },
+  premiumUntil: { type: Date },
+  stripeCustomerId: { type: String, default: "" },
 });
 
 export const UserModel = mongoose.model("User", userSchema);
