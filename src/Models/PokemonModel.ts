@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { v4 as uuidv4 } from "uuid";
+import { getNextSequenceValue } from "./CounterModel";
 
 const baseStatsSchema = new mongoose.Schema({
   health: { type: Number, required: true },
@@ -21,7 +22,6 @@ const pokemonSchema = new mongoose.Schema({
     type: Number,
     required: true,
     unique: true,
-    autoIncrement: true,
   },
   owner: {
     type: String,
@@ -43,6 +43,14 @@ const pokemonSchema = new mongoose.Schema({
   image: { type: String, required: true },
   is_favorite: { type: Boolean, required: true, default: false },
   is_public: { type: Boolean, required: true, default: false },
+});
+
+// Pre-save middleware to auto-increment pokemon_id
+pokemonSchema.pre("save", async function (next) {
+  if (this.isNew) {
+    this.pokemon_id = await getNextSequenceValue("pokemon_id");
+  }
+  next();
 });
 
 export const PokemonModel = mongoose.model("Pokemon", pokemonSchema);
