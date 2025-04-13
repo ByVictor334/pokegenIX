@@ -11,6 +11,11 @@ const baseStatsSchema = new mongoose.Schema({
   special: { type: Number, required: true },
 });
 
+const baseTypeSchema = new mongoose.Schema({
+  type: { type: String, required: true },
+  color: { type: String, required: true },
+});
+
 const pokemonSchema = new mongoose.Schema({
   id: {
     type: String,
@@ -28,8 +33,7 @@ const pokemonSchema = new mongoose.Schema({
     required: true,
   },
   name: { type: String, required: true },
-  type: [{ type: String, required: true }],
-  color: { type: String, required: true },
+  type: [baseTypeSchema],
   description: { type: String, required: true },
   abilities: [{ type: String, required: true }],
   base_stats: { type: baseStatsSchema, required: true },
