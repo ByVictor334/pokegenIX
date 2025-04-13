@@ -20,7 +20,6 @@ const pokemonSchema = new mongoose.Schema({
   },
   pokemon_id: {
     type: Number,
-    required: true,
     unique: true,
   },
   owner: {
