@@ -33,7 +33,7 @@ const pokemonSchema = new mongoose.Schema({
     required: true,
   },
   name: { type: String, required: true },
-  type: [baseTypeSchema],
+  types: [baseTypeSchema],
   description: { type: String, required: true },
   abilities: [{ type: String, required: true }],
   base_stats: { type: baseStatsSchema, required: true },

@@ -35,8 +35,8 @@ const options: swaggerJsdoc.Options = {
               type: "string",
               description: "Name of the Pokemon",
             },
-            type: {
-              type: "array",
+            types: {
+              types: "array",
               items: {
                 type: "object",
                 properties: {
