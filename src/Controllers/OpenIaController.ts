@@ -12,6 +12,7 @@ import {
   getPokemonImage,
   getPokedexBasedOnImage,
 } from "../Utils/OpenIAUtils";
+import { handleError } from "../ErrorHandler.ts";
 
 declare module "express-session" {
   interface SessionData {
@@ -113,10 +114,11 @@ export const createPokemonBasedOnImageDescription = async (
       pokemon: pokemonImage,
     });
   } catch (error) {
-    console.error("Error processing request:", error);
-    res.status(500).json({
-      success: false,
-      error: `Error processing request: ${error.message}`,
+    // Custom error handler for different error types
+    const errorResponse = handleError(error);
+    res.status(errorResponse.status).json({
+      success: errorResponse.success,
+      error: errorResponse.error,
     });
   }
 };
@@ -192,10 +194,10 @@ export const createPokedexBasedOnImage = async (
       pokemon: pokemon,
     });
   } catch (error) {
-    console.error("Error processing request:", error);
-    res.status(500).json({
-      success: false,
-      error: `Error processing request: ${error.message}`,
+    const errorResponse = handleError(error);
+    res.status(errorResponse.status).json({
+      success: errorResponse.success,
+      error: errorResponse.error,
     });
   }
 };
@@ -229,10 +231,10 @@ export const getPokemonDetails = async (
       pokemon: pokemon,
     });
   } catch (error) {
-    console.error("Error fetching pokemon details:", error);
-    res.status(500).json({
-      success: false,
-      error: `Error fetching pokemon details: ${error.message}`,
+    const errorResponse = handleError(error);
+    res.status(errorResponse.status).json({
+      success: errorResponse.success,
+      error: errorResponse.error,
     });
   }
 };
