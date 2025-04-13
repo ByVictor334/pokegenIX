@@ -7,6 +7,7 @@ import path from "path";
 import sharp from "sharp";
 import fetch from "node-fetch";
 import { PokemonModel } from "../Models/PokemonModel";
+import { UserModel } from "../Models/UserModel";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -84,7 +85,7 @@ async function getPokedexBasedOnImage(image: string) {
   Based on the provided image, create a detailed JSON file describing an original collectible creature. Do not include any text or labels in the image. The JSON should include:
 {
   "name": "UniqueCreatureName",
-  "type": "Elemental type (e.g., Grass, Fire, Water, etc.)",
+  "type": "[Two elemental types (e.g., Grass, Fire, Water, etc.)]",
   "color": "Color of the type (e.g., Red, Blue, Yellow, etc.)",
   "description": "A short biography of the creature, including its personality, behavior, and environment.",
   "abilities": ["List of special abilities"],
@@ -136,6 +137,37 @@ export const createPokemonBasedOnImageDescription = async (
   try {
     if (!req.file) {
       res.status(400).json({ error: "No image file uploaded" });
+      return;
+    }
+
+    // validate only 3 image generation per day
+    const user = await UserModel.findOne({ email: req.user?.email });
+    if (!user) {
+      res.status(400).json({ error: "User not found" });
+      return;
+    }
+
+    const now = new Date();
+    const last = user.lastImageGeneration;
+
+    const isNewDay = now.toDateString() !== last.toDateString();
+
+    if (isNewDay) {
+      // Nuevo día → reiniciar contador
+      user.imageGenerationCount = 1;
+      user.lastImageGeneration = now;
+    } else {
+      // Mismo día → incrementar contador
+      user.imageGenerationCount++;
+    }
+
+    await user.save();
+
+    if (user.imageGenerationCount > 3 && user.role !== "admin") {
+      res.status(403).json({
+        error:
+          "You have reached the maximum limit of 3 image generations per day",
+      });
       return;
     }
 
@@ -262,26 +294,6 @@ export const createPokedexBasedOnImage = async (
     res.status(500).json({
       success: false,
       error: `Error processing request: ${error.message}`,
-    });
-  }
-};
-
-export const getUserPokemons = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const pokemons = await PokemonModel.find({ owner: req.user._id });
-
-    res.json({
-      success: true,
-      pokemons: pokemons,
-    });
-  } catch (error) {
-    console.error("Error fetching user pokemons:", error);
-    res.status(500).json({
-      success: false,
-      error: `Error fetching user pokemons: ${error.message}`,
     });
   }
 };

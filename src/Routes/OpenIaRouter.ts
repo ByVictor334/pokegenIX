@@ -2,7 +2,6 @@ import express from "express";
 import {
   createPokemonBasedOnImageDescription,
   createPokedexBasedOnImage,
-  getUserPokemons,
   getPokemonDetails,
 } from "../Controllers/OpenIaController";
 import isAuthenticated from "../Middlewares/AuthMiddleware";
@@ -23,7 +22,7 @@ const router = express.Router();
  *   post:
  *     summary: Create a Pokemon description based on an image
  *     tags: [OpenAI]
- *     description: Generates a Pokemon description based on the provided image
+ *     description: Generates a Pokemon description based on the provided image, only 3 images per day
  *     requestBody:
  *       required: true
  *       content:
@@ -42,6 +41,10 @@ const router = express.Router();
  *         description: Pokemon description generated successfully
  *       400:
  *         description: Invalid image format or missing image
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: You have reached the maximum limit of 3 image generations per day
  *       500:
  *         description: Server error
  */
@@ -85,39 +88,6 @@ router.post(
  *         description: Server error
  */
 router.post("/create-pokedex", isAuthenticated, createPokedexBasedOnImage);
-
-/**
- * @swagger
- * /api/openia/user-pokemons:
- *   post:
- *     summary: Get all pokemons for the authenticated user
- *     tags: [OpenAI]
- *     description: Retrieves all pokemons owned by the authenticated user
- *     security:
- *       - sessionAuth: []
- *       - idTokenAuth: []
- *     responses:
- *       200:
- *         description: User pokemons retrieved successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 pokemons:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Pokemon'
- *       400:
- *         description: User not found
- *       401:
- *         description: Not authenticated
- *       500:
- *         description: Server error
- */
-router.post("/user-pokemons", isAuthenticated, getUserPokemons);
 
 /**
  * @swagger

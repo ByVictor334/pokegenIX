@@ -1,5 +1,11 @@
 import express from "express";
-import { PokemonController } from "../Controllers/PokemonController";
+import {
+  markAsFavorite,
+  markAsPublic,
+  getUserFavorites,
+  getPublicPokemons,
+  getUserPokemons,
+} from "../Controllers/PokemonController";
 import isAuthenticated from "../Middlewares/AuthMiddleware";
 
 const router = express.Router();
@@ -10,6 +16,84 @@ const router = express.Router();
  *   name: Pokemon
  *   description: Pokemon management endpoints
  */
+
+/**
+ * @swagger
+ * /api/pokemon/user-pokemons:
+ *   post:
+ *     summary: Get all pokemons for the authenticated user
+ *     tags: [Pokemon]
+ *     description: Retrieves all pokemons owned by the authenticated user, if no pokemons are owned, it will retrieve all public pokemons
+ *     security:
+ *       - sessionAuth: []
+ *       - idTokenAuth: []
+ *     responses:
+ *       200:
+ *         description: User pokemons retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 pokemons:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Pokemon'
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Server error
+ */
+router.post("/user-pokemons", isAuthenticated, getUserPokemons);
+
+/**
+ * @swagger
+ * /api/pokemon/favorites:
+ *   get:
+ *     summary: Get user's favorite Pokemon
+ *     tags: [Pokemon]
+ *     description: Retrieves all Pokemon marked as favorites by the authenticated user
+ *     security:
+ *       - sessionAuth: []
+ *       - idTokenAuth: []
+ *     responses:
+ *       200:
+ *         description: List of favorite Pokemon retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Pokemon'
+ *       401:
+ *         description: Not authenticated
+ *       500:
+ *         description: Server error
+ */
+router.get("/favorites", isAuthenticated, getUserFavorites);
+
+/**
+ * @swagger
+ * /api/pokemon/public:
+ *   get:
+ *     summary: Get public Pokemon
+ *     tags: [Pokemon]
+ *     description: Retrieves all Pokemon marked as public
+ *     responses:
+ *       200:
+ *         description: List of public Pokemon retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Pokemon'
+ *       500:
+ *         description: Server error
+ */
+router.get("/public", getPublicPokemons);
 
 /**
  * @swagger
@@ -47,12 +131,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-
-router.patch(
-  "/:id/favorite",
-  isAuthenticated,
-  PokemonController.markAsFavorite
-);
+router.patch("/:id/favorite", isAuthenticated, markAsFavorite);
 
 /**
  * @swagger
@@ -60,7 +139,7 @@ router.patch(
  *   patch:
  *     summary: Toggle public status of a Pokemon
  *     tags: [Pokemon]
- *     description: Marks or unmarks a Pokemon as public for the authenticated user
+ *     description: Marks or unmarks a Pokemon as public
  *     security:
  *       - sessionAuth: []
  *       - idTokenAuth: []
@@ -90,6 +169,6 @@ router.patch(
  *       500:
  *         description: Server error
  */
-router.patch("/:id/public", isAuthenticated, PokemonController.markAsPublic);
+router.patch("/:id/public", isAuthenticated, markAsPublic);
 
 export default router;

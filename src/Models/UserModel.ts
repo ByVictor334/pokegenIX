@@ -41,6 +41,8 @@ const userSchema = new mongoose.Schema({
   isBanned: { type: Boolean, default: false },
   isBlocked: { type: Boolean, default: false },
   isSuspended: { type: Boolean, default: false },
+  imageGenerationCount: { type: Number, default: 0 }, // number of images generated per day
+  lastImageGeneration: { type: Date, default: Date.now }, // last image generation date
 });
 
 export const UserModel = mongoose.model("User", userSchema);
