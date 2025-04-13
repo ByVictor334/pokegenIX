@@ -133,6 +133,10 @@ const loginWithGoogleCallback = async (
       googleId: payload.sub,
     });
 
+    console.log(
+      "%cHello srcControllersAuthController.ts:136 ",
+      "background: green; color: white; display: block;"
+    );
     req.session.token = {
       id: user.id,
       access_token: tokens.access_token as string,
@@ -148,7 +152,7 @@ const loginWithGoogleCallback = async (
       sub: user.googleId,
     };
 
-    res.redirect(process.env.CLIENT_URL || "http://localhost:3000/auth");
+    res.redirect(process.env.CLIENT_URL || "http://localhost:3000");
   } catch (error) {
     console.error("Error in web login:", error);
     return res.status(500).json({ message: "Internal server error" });

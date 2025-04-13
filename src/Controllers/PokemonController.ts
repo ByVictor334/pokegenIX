@@ -41,14 +41,14 @@ export const markAsFavorite = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id; // Assuming user info is attached to request by auth middleware
+    const userId = req.user?._id; // Assuming user info is attached to request by auth middleware
 
     if (!userId) {
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
 
-    const pokemon = await PokemonModel.findOne({ id, owner: userId });
+    const pokemon = await PokemonModel.findOne({ id: id, owner: userId });
 
     if (!pokemon) {
       res.status(404).json({
@@ -84,7 +84,7 @@ export const markAsPublic = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id; // Assuming user info is attached to request by auth middleware
+    const userId = req.user?._id; // Assuming user info is attached to request by auth middleware
 
     if (!userId) {
       res.status(401).json({ message: "Unauthorized" });
