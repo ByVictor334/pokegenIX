@@ -1,24 +1,24 @@
 import { OpenAI } from "openai";
 
 const POKEMON_TYPES = [
-  { type: "normal", color: "#A8A878" },
-  { type: "fire", color: "#F08030" },
-  { type: "water", color: "#6890F0" },
-  { type: "electric", color: "#F8D030" },
-  { type: "grass", color: "#78C850" },
-  { type: "ice", color: "#98D8D8" },
-  { type: "fighting", color: "#C03028" },
-  { type: "poison", color: "#A040A0" },
-  { type: "ground", color: "#E0C068" },
-  { type: "flying", color: "#A890F0" },
-  { type: "psychic", color: "#F85888" },
-  { type: "bug", color: "#A8B820" },
-  { type: "rock", color: "#B8A038" },
-  { type: "ghost", color: "#705898" },
-  { type: "dragon", color: "#7038F8" },
-  { type: "dark", color: "#705848" },
-  { type: "steel", color: "#B8B8D0" },
-  { type: "fairy", color: "#EE99AC" },
+  '{ type: "normal", color: "#A8A878" } | ',
+  '{ type: "fire", color: "#F08030" } | ',
+  '{ type: "water", color: "#6890F0" } | ',
+  '{ type: "electric", color: "#F8D030" } | ',
+  '{ type: "grass", color: "#78C850" } | ',
+  '{ type: "ice", color: "#98D8D8" } | ',
+  '{ type: "fighting", color: "#C03028" } | ',
+  '{ type: "poison", color: "#A040A0" } | ',
+  '{ type: "ground", color: "#E0C068" } | ',
+  '{ type: "flying", color: "#A890F0" } | ',
+  '{ type: "psychic", color: "#F85888" } | ',
+  '{ type: "bug", color: "#A8B820" } | ',
+  '{ type: "rock", color: "#B8A038" } | ',
+  '{ type: "ghost", color: "#705898" } | ',
+  '{ type: "dragon", color: "#7038F8" } | ',
+  '{ type: "dark", color: "#705848" } | ',
+  '{ type: "steel", color: "#B8B8D0" } | ',
+  '{ type: "fairy", color: "#EE99AC" }',
 ];
 
 const openai = new OpenAI({
@@ -77,7 +77,7 @@ export async function getPokedexBasedOnImage(image: string) {
   Based on the provided image, create a detailed JSON file describing an original collectible creature. Do not include any text or labels in the image. The JSON should include:
 {
   "name": "UniqueCreatureName",
-  "types": "[Two elemental with the structure: two of the next option: ${POKEMON_TYPES}]",
+  "types": "[List of two types from this options: ${POKEMON_TYPES}]",
   "description": "A short biography of the creature, including its personality, behavior, and environment.",
   "abilities": ["List of special abilities"],
   "base_stats": {
@@ -97,7 +97,12 @@ export async function getPokedexBasedOnImage(image: string) {
 }
 Only output the JSON structure. Don't include explanations or comments. Format the response cleanly and correctly. 
 Do not wrap in markdown or code blocks. Do not include any explanation or labels. Only output raw JSON`;
-
+  console.log(
+    "%csrc/Utils/OpenIAUtils.ts:100 prompt",
+    "color: white; background-color: #007acc;",
+    prompt
+  );
+  // return;
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [

@@ -172,7 +172,7 @@ export const createPokedexBasedOnImage = async (
 
     const pokemon = await PokemonModel.create({
       name: pokedexJson.name,
-      type: pokedexJson.type,
+      types: pokedexJson.types,
       color: pokedexJson.color,
       description: pokedexJson.description,
       abilities: pokedexJson.abilities,
