@@ -12,7 +12,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/webhook/webhook:
+ * /api/webhook:
  *   post:
  *     summary: Handle Stripe webhook events
  *     tags: [WebHook]

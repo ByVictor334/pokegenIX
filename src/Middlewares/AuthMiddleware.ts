@@ -19,6 +19,20 @@ async function isAuthenticated(
   res: Response,
   next: NextFunction
 ): Promise<void | Response> {
+  console.log(
+    "%c[[[[[[[[Hello]]]]]]]] srcMiddlewaresAuthMiddleware.ts:22 ",
+    "background: green; color: white; display: block;"
+  );
+  console.log(
+    "%csrcMiddlewaresAuthMiddleware.ts:26 req.body",
+    "color: white; background-color: #007acc;",
+    req.body
+  );
+  console.log(
+    "%csrcMiddlewaresAuthMiddleware.ts:26 req.url",
+    "color: white; background-color: #007acc;",
+    req.url
+  );
   try {
     if (req.body.id_token) {
       // Verify mobile ID token
