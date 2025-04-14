@@ -82,6 +82,16 @@ router.post("/login/google/mobile", loginWithGoogleMobileCallback);
  *     security:
  *       - sessionAuth: []
  *       - idTokenAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id_token:
+ *                 type: string
+ *                 description: Google ID token from mobile client
  *     responses:
  *       200:
  *         description: User profile retrieved successfully

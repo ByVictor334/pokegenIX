@@ -21,6 +21,16 @@ const router = express.Router();
  *     security:
  *       - sessionAuth: []
  *       - idTokenAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id_token:
+ *                 type: string
+ *                 description: Google ID token from mobile client
  *     responses:
  *       200:
  *         description: Checkout session created successfully
@@ -29,7 +39,12 @@ const router = express.Router();
  *             schema:
  *               type: object
  *               properties:
-
+ *                 sessionId:
+ *                   type: string
+ *                   description: The ID of the created checkout session
+ *                 redirectUrl:
+ *                   type: string
+ *                   description: The URL to redirect to after checkout
  *       401:
  *         description: User not authenticated
  *       404:
