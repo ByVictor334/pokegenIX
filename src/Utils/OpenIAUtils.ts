@@ -36,7 +36,7 @@ Return a concise description in English, formatted as structured JSON like this:
 The output must be under 1000 characters total. Do not include any background, lighting, or artistic elements—only the main object's physical properties.`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4.1-nano-2025-04-14",
     messages: [
       {
         role: "user",
@@ -66,7 +66,7 @@ export async function getPokemonImage(description: string) {
     model: "dall-e-3",
     prompt: prompt,
     n: 1,
-    size: "1024x1024",
+    size: "512x512",
   });
   return pokemon.data[0].url;
 
@@ -98,14 +98,8 @@ export async function getPokedexBasedOnImage(image: string) {
 }
 Only output the JSON structure. Don't include explanations or comments. Format the response cleanly and correctly. 
 Do not wrap in markdown or code blocks. Do not include any explanation or labels. Only output raw JSON`;
-  console.log(
-    "%csrc/Utils/OpenIAUtils.ts:100 prompt",
-    "color: white; background-color: #007acc;",
-    prompt
-  );
-  // return;
   const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4.1-nano-2025-04-14",
     messages: [
       {
         role: "user",
