@@ -25,18 +25,46 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+const MODEL = "gpt-4o-mini";
+const MODEL_DALLE = "dall-e-3";
+const SIZE_DALLE = "1024x1024";
+
+const loadPrompt = (description: {
+  object: string;
+  body_shape: string;
+  texture: string;
+  color_primary: string;
+  color_secondary: string;
+  background: string;
+  unique_object: boolean;
+}) => {
+  const PROMPT_POKEMON_ROGER = `Design a single cute and collectible fantasy creature inspired by Japanese creature design based in the following description: ${JSON.stringify(
+    description
+  )}. The creature has expressive eyes and stands in a dynamic pose. Style should resemble anime or handheld monster-collecting games.`;
+
+  const PROMPT_POKEMON_VICTOR = `Create a full-body image of an original, collectible mythical creature with the shape and texture of a ${description.body_shape} ${description.object}. The creature should have a cute and iconic design in a cartoony style. Its body is primarily ${description.color_primary} with ${description.color_secondary} accents, reflecting the color of a classic ${description.object}. The creature has large, expressive eyes and a friendly yet battle-ready expression. Its form is sleek, simple, and playful, with limbs and possibly wings that integrate smoothly into the overall design. The surface of its body should be ${description.texture} and smooth, subtly suggesting ${description.object} material without literal textures. Rendered in clean digital art with bold outlines, flat colors, and minimal shading. The creature is centered and isolated on a pure white background, like a character from a game card or product listing.`;
+
+  return PROMPT_POKEMON_ROGER;
+  return PROMPT_POKEMON_VICTOR;
+};
+
 export async function getPrompt(image: string) {
   const prompt = `Analyze the image and identify the main object. Focus exclusively on its physical characteristics: texture, color, and shape. Ignore background elements or context.
 Return a concise description in English, formatted as structured JSON like this:
 {
   "object": "name or type of object, focus on only one object and add a single and then the object name (e.g., a single smooth, a single rough, a single glossy, a single matte, a single fuzzy slipper)",
-  "color": "primary and secondary colors",
-  "shape": "flat and rounded"
+  "body_shape": "shape of the main object",
+  "texture": "fuzzy",
+  "color_primary": "main color of the object",
+  "color_secondary": "secondary color of the object",
+  "background": "ALLWAYS pure white",
+  "unique_object": true
 }
-The output must be under 1000 characters total. Do not include any background, lighting, or artistic elements—only the main object's physical properties.`;
+Do not include the word 'json' or any extra formatting. Just return the JSON object.
+The output must be under 1000 characters.`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4.1-nano-2025-04-14",
+    model: MODEL,
     messages: [
       {
         role: "user",
@@ -55,18 +83,35 @@ The output must be under 1000 characters total. Do not include any background, l
   });
 
   const description = response.choices[0].message.content;
+  console.log(
+    "%c------------------------- srcUtilsOpenIAUtils.ts:62 ",
+    "background: green; color: white; display: block;"
+  );
+  console.log(
+    "%csrcUtilsOpenIAUtils.ts:62 description",
+    "color: white; background-color: #007acc;",
+    description
+  );
+  console.log(
+    "%c------------------------- srcUtilsOpenIAUtils.ts:62 ",
+    "background: green; color: white; display: block;"
+  );
   return description;
 }
 
 export async function getPokemonImage(description: string) {
-  const prompt = `
-  Create a single, original collectible creature inspired by the following description: ${description}. The creature must be cute, stylized, and have a simple yet iconic design. It should feature bright, appealing colors, large expressive eyes, and a friendly but battle-ready appearance. Its form should reflect the shape, texture, and color of the description in a creative and playful way. Render the creature in full-body, with clean lines and a digital art style reminiscent of Nintendo or creature-collecting games. centered and isolated on a pure white background, like a passport photo or product listing on Amazon. No shadows, no textures, no gradients, no reflections, no floor, no walls, no text, no logos, no props. The background must be flat, blank, and perfectly white.
-  `;
+  const descriptionObject = JSON.parse(description);
+  const prompt = loadPrompt(descriptionObject);
+  console.log(
+    "%csrcUtilsOpenIAUtils.ts:69 prompt",
+    "color: white; background-color: #007acc;",
+    prompt
+  );
   const pokemon = await openai.images.generate({
-    model: "dall-e-3",
+    model: MODEL_DALLE,
     prompt: prompt,
     n: 1,
-    size: "512x512",
+    size: SIZE_DALLE,
   });
   return pokemon.data[0].url;
 
@@ -99,7 +144,7 @@ export async function getPokedexBasedOnImage(image: string) {
 Only output the JSON structure. Don't include explanations or comments. Format the response cleanly and correctly. 
 Do not wrap in markdown or code blocks. Do not include any explanation or labels. Only output raw JSON`;
   const response = await openai.chat.completions.create({
-    model: "gpt-4.1-nano-2025-04-14",
+    model: MODEL,
     messages: [
       {
         role: "user",

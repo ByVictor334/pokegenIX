@@ -98,6 +98,9 @@ export const createPokemonBasedOnImageDescription = async (
       return;
     }
 
+    console.log("-----------------------------------------:");
+    console.log("Processing image...");
+    console.log("-----------------------------------------:");
     const description = await getPrompt(
       `data:image/png;base64,${processedImageBuffer.toString("base64")}`
     );
