@@ -24,3 +24,8 @@ export const createStripeCheckoutSession = async (
   });
   return session;
 };
+
+export const cancelStripeSubscription = async (subscriptionId: string) => {
+  const subscription = await stripe.subscriptions.cancel(subscriptionId);
+  return subscription;
+};

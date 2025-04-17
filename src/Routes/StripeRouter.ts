@@ -1,5 +1,8 @@
 import express from "express";
-import { createCustomCheckoutSession } from "../Controllers/StripeController";
+import {
+  cancelSubscription,
+  createCustomCheckoutSession,
+} from "../Controllers/StripeController";
 import isAuthenticated from "../Middlewares/AuthMiddleware";
 
 const router = express.Router();
@@ -57,5 +60,26 @@ router.post(
   isAuthenticated,
   createCustomCheckoutSession
 );
+
+/**
+ * @swagger
+ * /api/stripe/cancel-subscription:
+ *   post:
+ *     summary: Cancel a Stripe subscription
+ *     tags: [Stripe]
+ *     security:
+ *       - sessionAuth: []
+ *       - idTokenAuth: []
+ *     responses:
+ *       200:
+ *         description: Subscription cancelled successfully
+ *       401:
+ *         description: User not authenticated
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.post("/cancel-subscription", isAuthenticated, cancelSubscription);
 
 export default router;

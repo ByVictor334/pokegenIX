@@ -46,6 +46,7 @@ const userSchema = new mongoose.Schema({
   isPremium: { type: Boolean, default: false },
   premiumUntil: { type: Date },
   stripeCustomerId: { type: String, default: "" },
+  stripeSubscriptionId: { type: String, default: "" },
 });
 
 export const UserModel = mongoose.model("User", userSchema);
